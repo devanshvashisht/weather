@@ -1,0 +1,60 @@
+<!DOCTYPE html>     
+<html lang = "en">
+    <head>   
+        <meta charset="UTF-8">
+        <meta name = "viewport" content = "width=device-width, initial-scale=1.0">
+        <title>Weather App</title>
+        <style>
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                background-color: rgb(3, 66, 87);
+
+            }
+
+            #weather-info{
+                margin-top: 20px;
+            }
+        </style>  
+    </head>
+    <body>
+        <h1>Weather App</h1>
+        <form id = "weather-form">
+            <label for = "city">Enter city name:</label>
+            <input type = "text" id = "city" name = "city">
+            <button type = "submit">Get weather</button>
+        </form>
+        <div id = "weather-info"></div>
+
+
+        <script>
+            document.getElementById('weather-form').addEventListener('submit', async function(event){
+                event.preventDefault();
+
+                const city = document.getElementById('city').value;
+
+
+                try{
+                    const response = await fetch(`http://localhost:3000/weather?city=${city}`);
+                    const data = await response.json();
+
+                    if(response.ok){
+                        const weatherInfo = `
+                            <h2>${data.city}</h2>
+                            <p>Temperature: ${data.temperature}°C</p>
+                            <p>Description: ${data.description}</p>
+                            <p>Humidity: ${data.humidity}%</p>
+                            <p>Wind Speed: ${data.windSpeed} m/s</p>
+                        `;
+                        document.getElementById('weather-info').innerHTML = weatherInfo;
+                    }else{
+                        document.getElementById('weather-info').innerHTML = `<p>${data.error}</p>`
+
+                    }
+                } catch(error){
+                    console.error('Error while fetching data', error);
+                    document.getElementById('weather-info').innerHTML = '<p>Error fetching weather data</p>'
+                }
+            });
+        </script>
+    </body>
+</html>

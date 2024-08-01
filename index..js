@@ -1,0 +1,93 @@
+const express = require('express');  //express is a webapp framework used to create APIs and webapps
+const axios = require('axios');       //used for making https requests from both browser and node js environments
+const cors = require('cors');
+
+
+const app = express();
+const PORT = 3000;
+
+const API_KEY = '5bdb07dfc6a6cef46303670eab7f500f';  // for authentication to use the api
+const BASE_URL  = 'https://api.openweathermap.org/data/2.5/weather';    // used as the endpoint for fetching weather data
+app.use(cors());
+app.get('/weather', async(req,res)=>{   // app.get(path,handler)
+    const city = req.query.city;
+    
+
+    if(!city){
+        return res.status(400).json({error : 'City name is required'});
+    }
+
+    try{
+        const response = await axios.get(`${BASE_URL}`, {
+            params:{ 
+                q: city,
+                appid: API_KEY,
+                units: 'metric'
+            }
+                
+
+        });
+
+        const weatherData = response.data;
+        res.json({
+            city: weatherData.name,
+            temperature: weatherData.main.temp,
+            description: weatherData.weather[0].description,
+            humidity: weatherData.main.humidity,
+            windSpeed: weatherData.wind.speed
+
+        });
+
+    } catch (error){
+        res.status(500).json({error: 'Error fetching weather data'});
+
+    }
+
+});
+
+
+const geoAPI =  'AIzaSyCprcSP7ak4FYOJk4iqSqNy_IXa7Y0eDms';
+app.get('/geocode/:location',async(req,res)=>{
+    const location = req.params.location;
+    const geo_URL = `https://maps.googleapis.com/maps/api/geocode/json?address=${location}&key=${geoAPI}`;
+
+    if(!location){
+        res.status(400).json({error: 'City name is required'});
+    }
+
+    try{
+        const response = await axios.get(`${geo_URL}`);
+
+        const place = response.data;
+        if(place.status==='OK'){
+            const lat = place.results[0].geometry.location.lat;
+            const long = place.results[0].geometry.location.lng;
+
+
+            const URL_ELEVATION = `https://maps.googleapis.com/maps/api/elevation/json?locations=${lat},${long}&key=${geoAPI}`;
+            const elev_data = await axios.get(`${URL_ELEVATION}`);
+            
+
+            const final = elev_data.data;
+
+            res.json({
+                lat : `${lat}`,
+                long : long,
+                elevation: final.results[0].elevation
+            })
+
+        }
+        else{
+            res.status(404).json({error: 'location not found'});
+
+        }
+    }
+    catch(error){
+        res.status(500).json({error:'An error occured while fetching geocoding data'});
+    }
+});
+
+
+app.listen(PORT,()=>{
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
